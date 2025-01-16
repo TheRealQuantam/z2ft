@@ -29,6 +29,8 @@ CREDITS_TRACK_IDX = $10
 GAME_COMPLETE_TRACK_IDX = $11
 DARK_LINK_TRACK_IDX = $12
 
+TRACK_FLAG_FANFARE = 1 ; Do not save to previous track if preempted
+
 MUSIC_CMDS_START = $80
 BEGIN_OVERWORLD_CMD = $80
 RESUME_OVERWORLD_CMD = $81
@@ -177,7 +179,7 @@ SavedBhopTemps: .res NUM_BHOP_TEMPS
 
 TrackIdxToPlay: .byte 0 ; 0 if none, $80 to stop music
 
-PrevSfxChans: .byte 0
+PrevSfxChans: .byte 0 ; MSB indicates that FT track is resuming after being paused
 CurSfxChans: .byte 0
 
 ; $80 if none
@@ -316,8 +318,11 @@ patch_segment PATCH_RESTART_LAST_BOSS_TRACK, 9, $988e, $9896
 	
 	; $874 bytes available
 	
+UpdateSound:
+	jmp UpdateSoundBody
+	
 ; Need to replace the original so that music-stopping SFX can be captured before they're processed
-.proc UpdateSound
+.proc UpdateSoundBody
 	lda TrackToPlay
 	bne @CallUpdate
 	
@@ -336,7 +341,7 @@ patch_segment PATCH_RESTART_LAST_BOSS_TRACK, 9, $988e, $9896
 @CallUpdate:
 	jmp UpdateNativeSound
 	
-.endproc ; UpdateSound
+.endproc ; UpdateSoundBody
 
 .proc UpdateTitleMusic
 	lda IsInit
@@ -483,13 +488,6 @@ patch_segment PATCH_RESTART_LAST_BOSS_TRACK, 9, $988e, $9896
 @RecheckIdxToPlay:
 	pha
 
-	lda PlayingFt
-	beq @NotPlayingFt
-	
-	lda CurTrack
-	sta PrevFtTrack
-	
-@NotPlayingFt:
 	lda #$0
 	sta PlayingFt
 	sta TrackToPlay
@@ -498,15 +496,6 @@ patch_segment PATCH_RESTART_LAST_BOSS_TRACK, 9, $988e, $9896
 	jsr StopNativeTrack
 	
 	pla
-	
-	bne @BeginTrack
-	
-@NoNewTrack:
-	lda #NO_FT_TRACK_TO_PLAY
-	sta CurTrack
-	sta PrevTrack
-
-	bne @UpdateMusic
 	
 @BeginTrack:
 	jsr BeginTrack
@@ -640,39 +629,27 @@ patch_segment PATCH_RESTART_LAST_BOSS_TRACK, 9, $988e, $9896
 	tax
 	
 	ldy TrackMap + 1, x
-	bmi @Return0
+	bmi @StopMusic
 	
-	lsr a
 	pha
 	
-	/*stx Temp
+	ldx CurTrack
+	bmi @NoSaveCurTrack
 	
-	lsr a
-	tax
-	
-	cmp #NUM_TRACKS
-	bcs @SaveCurTrack
-	
-	lda @SavePrevTracks, x
-	bne @SaveCurTrack
-	
-@NoSaveCurTrack:
-	lda #NO_FT_TRACK_TO_PLAY
-	
-	bne @SetTrackIdcs*/
+	lda TrackFlags, x
+	and #TRACK_FLAG_FANFARE
+	bne @NoSaveCurTrack
 	
 @SaveCurTrack:
-	lda CurTrack
+	stx PrevTrack
 	
-@SetTrackIdcs:
-	sta PrevTrack
-	
-	; txa
+@NoSaveCurTrack:
 	pla
+	tax
+	
+	lsr a
 	sta CurTrack
-	
-	;ldx Temp
-	
+
 @BeginTrack:
 	lda TrackMap, x
 	bmi @IsFtTrack
@@ -695,9 +672,6 @@ patch_segment PATCH_RESTART_LAST_BOSS_TRACK, 9, $988e, $9896
 	lda #(<.bank(UpdateFtMusic) | PRG_BANK_ROM)
 	sta FtEngineBank
 	
-	lda #NO_FT_TRACK_TO_PLAY
-	sta PrevFtTrack
-	
 	lda TrackAddrMap, x
 	sta FtAddrToPlay
 	lda TrackAddrMap + 1, x
@@ -715,29 +689,30 @@ patch_segment PATCH_RESTART_LAST_BOSS_TRACK, 9, $988e, $9896
 	sta CurTrack
 	
 	lda #NO_FT_TRACK_TO_PLAY
-	sta PrevFtTrack
+	; sta PrevFtTrack
 	sta PrevTrack ;;; TODO: Support FT fanfares?
 	
-	; lda #$f
-	; sta PrevSfxChans
+	lda #$8f
+	sta PrevSfxChans
 	sta PlayingFt
 	
 	bne @Return0
 	
 @IsCommand:
 	cmp #STOP_MUSIC_CMD
-	beq @Return0
+	bcs @StopMusic
 	
 	jsr GetEncounterTrack
 	bmi @Return0
 	
 	jmp @IsTrack0
 	
-; Whether the track index should be saved when starting another
-/*@SavePrevTracks:
-	.byte 0, 0, 0, 0, 1, 0, 0, 0
-	.byte 1, 0, 0, 0, 0, 0, 0, 0
-	.byte 0, 0, 0*/
+@StopMusic:
+	lda #NO_FT_TRACK_TO_PLAY
+	sta CurTrack
+	sta PrevTrack
+	
+	bmi @Return0
 .endproc ; BeginTrack
 
 .proc GetEncounterTrack
@@ -838,6 +813,7 @@ patch_segment PATCH_RESTART_LAST_BOSS_TRACK, 9, $988e, $9896
 	
 @IsIntroTrack:
 	; Advance to loop track
+	;;; TODO: Use track flags?
 	lda CurTrack
 	clc
 	adc #$1
@@ -850,12 +826,18 @@ patch_segment PATCH_RESTART_LAST_BOSS_TRACK, 9, $988e, $9896
 	rts
 	
 @NotIntroTrack:
-	lda CurNativeTrack
+	lda CurNativeTrack ;;; TODO: Use TrackFlags
 	and #%01001110
 	bne @Done
 
 @IsEndOfTrack:	
 	lda CurTrack
+
+	; Ensure the finished track isn't copied to PrevTrack by BeginTrack
+	ldx #NO_FT_TRACK_TO_PLAY
+	stx CurTrack
+	
+	;;; TODO: Use TrackFlags
 	cmp #ITEM_FANFARE_TRACK_IDX
 	beq @RestorePrev
 	cmp #SKILL_FANFARE_TRACK_IDX
@@ -866,6 +848,7 @@ patch_segment PATCH_RESTART_LAST_BOSS_TRACK, 9, $988e, $9896
 	bmi @Common
 	
 @RestorePrev:
+	;;; Should TrackIdxToPlay be set to $ff or 0 if no prev track??
 	ldx PrevTrack
 	bmi @Common
 	
@@ -931,6 +914,19 @@ RevTrackZoneMap:
 	.byt 1, 3, 3, 3, 3, 5, 5, 5
 	.byt 5, 5, 5
 	
+TrackFlags:
+	.res 4, 0
+	.byte TRACK_FLAG_FANFARE ; 4 (item fanfare)
+	.res 3, 0
+	.byte TRACK_FLAG_FANFARE ; 8 (skill fanfare)
+	.res 2, 0
+	.byte TRACK_FLAG_FANFARE ; b (boss)
+	.byte TRACK_FLAG_FANFARE ; c (crystal fanfare)
+	.res 4, 0
+	.byte TRACK_FLAG_FANFARE ; 11 (game complete fanfare)
+	.byte TRACK_FLAG_FANFARE ; 12 (Dark Link)
+	.res MAX_TRACKS - $13, 0
+
 BANKC_LOW_FREE_SPACE:
 
 
@@ -1039,6 +1035,9 @@ BANKD_FREE_SPACE:
 	bmi @NoTrackToPlay
 	
 @BeginTrack:
+	ldx CurTrack
+	stx PrevFtTrack
+	
 	ldx FtBankToPlay
 	stx CurFtBank
 .ifdef RANDOMIZER
@@ -1059,7 +1058,14 @@ BANKD_FREE_SPACE:
 	sta CurBankA
 .endif
 	sta PrgBankAReg
-
+	
+	lda PrevSfxChans
+	bpl @NoResumeFt
+	
+	; PrevSfxChans must be $8f
+	jsr bhop_mute_channels
+	
+@NoResumeFt:
 	lda CurSfxChans
 	cmp PrevSfxChans
 	beq @DoneWithMutes
