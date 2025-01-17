@@ -65,12 +65,6 @@ STOP_MUSIC_CMD = $84 ; And above
 	.endrepeat
 .endmacro
 
-/*.macro def_track_table_bank bank, start_idx, end_idx
-	.repeat (end_idx) - (start_idx), idx
-	.byte (bank), idx + (start_idx)
-	.endrepeat
-.endmacro*/
-
 .macro patch_segment name, size, start_addr, end_addr
 	.segment .string(name)
 
@@ -1082,36 +1076,6 @@ BANKD_FREE_SPACE:
 	lda #$f
 	sta ApuStatus_4015
 
-	/*ldx #$0
-	
-	lsr a
-	bcc @CheckSquare2
-	
-	sta Sq0Timer_4002
-	sta Sq0Length_4003
-	
-@CheckSquare2:
-	lsr a
-	bcc @CheckTri
-	
-	sta Sq1Timer_4006
-	sta Sq1Length_4007
-	
-@CheckTri:
-	lsr a
-	bcc @CheckNoise
-	
-	sta TriTimer_400A
-	sta TriLength_400B
-	
-@CheckNoise:
-	lsr a
-	bcc @DoneWithChecks
-	
-	sta NoisePeriod_400E
-	sta NoiseLength_400F
-	
-@DoneWithChecks:*/
 	pla
 	
 	jsr bhop_unmute_channels
