@@ -168,9 +168,6 @@ IsInit: .byte 0
 
 
 .segment "HIVARS"
-	.org $757a
-SavedBhopTemps: .res NUM_BHOP_TEMPS
-
 TrackIdxToPlay: .byte 0 ; 0 if none, $80 to stop music
 
 PrevSfxChans: .byte 0 ; MSB indicates that FT track is resuming after being paused
@@ -191,6 +188,11 @@ FtBankToPlay: .byte 0
 FtAddrToPlay: .word 0
 
 RealCurMapArea: .byte 0
+
+SavedBhopTemps: .res NUM_BHOP_TEMPS
+
+END_HIVARS:
+
 
 .macro save_bhop_temps
 	.repeat NUM_BHOP_TEMPS, i
