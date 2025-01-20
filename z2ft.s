@@ -5,6 +5,9 @@
 .feature c_comments
 .feature org_per_seg
 
+.define FT_SAVE_BUFF_SIZE $140
+.import __BHOP_RAM_LOAD__, __BHOP_RAM_SIZE__
+
 BANK_SIZE = $2000
 NUM_PRG_BANKS = $20
 
@@ -191,8 +194,18 @@ RealCurMapArea: .byte 0
 
 SavedBhopTemps: .res NUM_BHOP_TEMPS
 
+SavedFtTrack: .byte 0 ; $80 if none
+SavedFtEngineBank: .byte 0
+SavedFtBank: .byte 0
+
 END_HIVARS:
 
+.segment "FT_SAVE_BUFFER"
+FtSaveBuff: .res FT_SAVE_BUFF_SIZE
+
+END_FT_SAVE_BUFFER:
+
+.assert __BHOP_RAM_SIZE__ <= FT_SAVE_BUFF_SIZE, lderror, "BHOP RAM size exceeds FtSaveBuff size"
 
 .macro save_bhop_temps
 	.repeat NUM_BHOP_TEMPS, i
@@ -360,6 +373,7 @@ UpdateSound:
 	sta PrevTrack
 	sta PrevFtTrack
 	sta FtTrackToPlay
+	sta SavedFtTrack
 	
 	sta IsInit
 	
@@ -621,6 +635,9 @@ UpdateSound:
 	cmp PrevFtTrack
 	beq @RestoreFtTrack
 	
+	cmp SavedFtTrack
+	beq @LoadSavedFtTrack
+	
 	asl a
 	tax
 	
@@ -660,6 +677,21 @@ UpdateSound:
 	bmi @Return0
 	
 @IsFtTrack:
+	;;; TODO: Support FT fanfares
+	pha
+	
+	lda PrevFtTrack
+	bmi :+
+	
+	txa
+	pha
+	jsr SaveFtData
+	pla
+	tax
+	
+@:
+	pla
+	
 	eor #$ff
 	ora #PRG_BANK_ROM
 	sta FtBankToPlay
@@ -684,6 +716,7 @@ UpdateSound:
 @RestoreFtTrack:
 	sta CurTrack
 	
+@RestoreFtTrackCommon:
 	lda #NO_FT_TRACK_TO_PLAY
 	; sta PrevFtTrack
 	sta PrevTrack ;;; TODO: Support FT fanfares?
@@ -694,6 +727,19 @@ UpdateSound:
 	
 	bne @Return0
 	
+@LoadSavedFtTrack:
+	; Neither X nor Y are needed after this
+	jsr SwapFtSaveData
+	
+	jmp @RestoreFtTrackCommon
+	
+@StopMusic:
+	lda #NO_FT_TRACK_TO_PLAY
+	sta CurTrack
+	sta PrevTrack
+	
+	bmi @Return0
+
 @IsCommand:
 	cmp #STOP_MUSIC_CMD
 	bcs @StopMusic
@@ -702,13 +748,6 @@ UpdateSound:
 	bmi @Return0
 	
 	jmp @IsTrack0
-	
-@StopMusic:
-	lda #NO_FT_TRACK_TO_PLAY
-	sta CurTrack
-	sta PrevTrack
-	
-	bmi @Return0
 .endproc ; BeginTrack
 
 .proc GetEncounterTrack
@@ -856,6 +895,73 @@ UpdateSound:
 	
 	rts
 .endproc ; HandleEndOfTrack
+
+.proc SaveFtData
+	; Clobbers A and X
+
+.repeat (FT_SAVE_BUFF_SIZE + $ff) / $100, page
+	page_offs .set page * $100
+	page_size .set .min(FT_SAVE_BUFF_SIZE - page_offs, $100)
+	
+	ldx #<page_size
+	
+@:
+	dex
+	lda __BHOP_RAM_LOAD__ + page_offs, x
+	sta FtSaveBuff + page_offs, x
+	txa
+	bne :-
+.endrepeat ; page
+
+	lda PrevFtTrack
+	sta SavedFtTrack
+	lda FtEngineBank
+	sta SavedFtEngineBank
+	lda CurFtBank
+	sta SavedFtBank
+	
+	rts
+.endproc ; SaveFtData
+
+.proc SwapFtSaveData
+	; Clobbers all registers
+	
+.repeat (FT_SAVE_BUFF_SIZE + $ff) / $100, page
+	page_offs .set page * $100
+	page_size .set .min(FT_SAVE_BUFF_SIZE - page_offs, $100)
+	
+	ldx #<page_size
+	
+@:
+	dex
+	lda __BHOP_RAM_LOAD__ + page_offs, x
+	ldy FtSaveBuff + page_offs, x
+	sta FtSaveBuff + page_offs, x
+	tya
+	sta __BHOP_RAM_LOAD__ + page_offs, x
+	
+	txa
+	bne :-
+.endrepeat ; page
+	
+	lda PrevFtTrack
+	ldy SavedFtTrack
+	sta SavedFtTrack
+	sty CurTrack
+	sty PrevFtTrack
+	
+	lda FtEngineBank
+	ldy SavedFtEngineBank
+	sta SavedFtEngineBank
+	sty FtEngineBank
+	
+	lda CurFtBank
+	ldy SavedFtBank
+	sta SavedFtBank
+	sty CurFtBank
+
+	rts
+.endproc ; SwapFtSaveData
 
 ; Maps from zone:track indices to global track indices/commands
 GameTrackIdxMap: 
