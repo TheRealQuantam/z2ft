@@ -32,198 +32,198 @@
 		
 	"boss_track_tbl_offs": 0x18c00,
 	"boss_track_names": [
-		"NorthCastle", // "WestArea00",
-		"TrophyCave", // "WestArea01",
-		"WestArea02",
-		"WestArea03",
-		"WestArea04",
-		"WestArea05",
-		"WestArea06",
-		"WestArea07",
-		"WestArea08",
-		"WestArea09",
-		"WestArea0a",
-		"WestArea0b",
-		"WestArea0c",
-		"WestArea0d",
-		"WestArea0e",
-		"WestArea0f",
-		"WestArea10",
-		"WestArea11",
-		"WestArea12",
-		"WestArea13",
-		"WestArea14",
-		"WestArea15",
-		"WestArea16",
-		"WestArea17",
-		"WestArea18",
-		"WestArea19",
-		"WestArea1a",
-		"WestArea1b",
-		"WestArea1c",
-		"WestArea1d",
-		"WestArea1e",
-		"WestArea1f",
-		"WestArea20",
-		"WestArea21",
-		"WestArea22",
-		"WestArea23",
-		"WestArea24",
-		"WestArea25",
-		"WestArea26",
-		"WestArea27",
-		"WestArea28",
-		"WestArea29",
-		"WestArea2a",
-		"WestArea2b",
-		"KingsTomb", // "WestArea2c",
-		"RauruTown", // "WestArea2d",
-		"WestArea2e",
-		"RutoTown", // "WestArea2f",
-		"SariaTownBottom", // "WestArea30",
-		"SariaTownTop", // "WestArea31",
-		"BagusHouse", // "WestArea32",
-		"MidoTown", // "WestArea33",
-		"Palace1", // "WestArea34",
-		"Palace2", // "WestArea35",
-		"Palace3", // "WestArea36",
-		"WestArea37",
-		"WestArea38",
-		"WestArea39",
-		"WestArea3a",
-		"WestArea3b",
-		"WestArea3c",
-		"WestArea3d",
-		"WestArea3e",
-		"WestArea3f",
-		"DmArea00",
-		"DmArea01",
-		"DmArea02",
-		"DmArea03",
-		"DmArea04",
-		"DmArea05",
-		"DmArea06",
-		"DmArea07",
-		"DmArea08",
-		"DmArea09",
-		"DmArea0a",
-		"DmArea0b",
-		"DmArea0c",
-		"DmArea0d",
-		"DmArea0e",
-		"DmArea0f",
-		"DmArea10",
-		"DmArea11",
-		"DmArea12",
-		"DmArea13",
-		"DmArea14",
-		"DmArea15",
-		"DmArea16",
-		"DmArea17",
-		"DmArea18",
-		"DmArea19",
-		"DmArea1a",
-		"DmArea1b",
-		"HammerCave", // "DmArea1c",
-		"DmArea1d",
-		"DmArea1e",
-		"DmArea1f",
-		"DmArea20",
-		"DmArea21",
-		"DmArea22",
-		"DmArea23",
-		"DmArea24",
-		"DmArea25",
-		"DmArea26",
-		"DmArea27",
-		"DmArea28",
-		"DmArea29",
-		"DmArea2a",
-		"DmArea2b",
-		"DmArea2c",
-		"DmArea2d",
-		"DmArea2e",
-		"DmArea2f",
-		"DmArea30",
-		"DmArea31",
-		"DmArea32",
-		"DmArea33",
-		"Palace4", // "DmArea34",
-		"DmArea35",
-		"DmArea36",
-		"ChildCave", // "DmArea37",
-		"DmArea38",
-		"DmArea39",
-		"DmArea3a",
-		"DmArea3b",
-		"DmArea3c",
-		"DmArea3d",
-		"DmArea3e",
-		"DmArea3f",
-		"EastArea00",
-		"EastArea01",
-		"EastArea02",
-		"EastArea03",
-		"EastArea04",
-		"EastArea05",
-		"EastArea06",
-		"EastArea07",
-		"EastArea08",
-		"EastArea09",
-		"EastArea0a",
-		"EastArea0b",
-		"EastArea0c",
-		"EastArea0d",
-		"EastArea0e",
-		"EastArea0f",
-		"EastArea10",
-		"EastArea11",
-		"EastArea12",
-		"EastArea13",
-		"EastArea14",
-		"EastArea15",
-		"EastArea16",
-		"EastArea17",
-		"EastArea18",
-		"EastArea19",
-		"EastArea1a",
-		"EastArea1b",
-		"EastArea1c",
-		"EastArea1d",
-		"EastArea1e",
-		"EastArea1f",
-		"EastArea20",
-		"EastArea21",
-		"EastArea22",
-		"EastArea23",
-		"EastArea24",
-		"EastArea25",
-		"EastArea26",
-		"EastArea27",
-		"EastArea28",
-		"EastArea29",
-		"EastArea2a",
-		"EastArea2b",
-		"EastArea2c",
-		"NabooruTown", // "EastArea2d",
-		"EastArea2e",
-		"DaruniaTown", // "EastArea2f",
-		"EastArea30",
-		"NewKasutoTown", // "EastArea31",
-		"EastArea32",
-		"OldKasutoTown", // "EastArea33",
-		"Palace5", // "EastArea34",
-		"Palace6", // "EastArea35",
-		"GreatPalace", // "EastArea36",
-		"EastArea37",
-		"EastArea38",
-		"EastArea39",
-		"EastArea3a",
-		"EastArea3b",
-		"EastArea3c",
-		"EastArea3d",
-		"EastArea3e",
-		"EastArea3f",
+		"NorthCastle", // "North Castle"
+		"TrophyCave", // "Desert Cave"
+		"WestArea02", // "Secret 1"
+		"WestArea03", // "Cave 1"
+		"WestArea04", // "Secret 5"
+		"WestArea05", // "Secret 2"
+		"WestArea06", // "Trap 6"
+		"WestArea07", // "Trap 1"
+		"WestArea08", // "Secret 4"
+		"WestArea09", // "Secret 10"
+		"WestArea0a", // "Parapa Cave"
+		"WestArea0b", // invalid
+		"WestArea0c", // "Northwestern Cave Entrance"
+		"WestArea0d", // "Northwestern Cave Exit"
+		"WestArea0e", // "Cave 2"
+		"WestArea0f", // "Cave 4"
+		"WestArea10", // "Cave 3"
+		"WestArea11", // "Island Palace Tunnel Entrance"
+		"WestArea12", // "Island Palace Tunnel Exit"
+		"WestArea13", // "Trap 2"
+		"WestArea14", // "Trap 3"
+		"WestArea15", // "Trap 9A"
+		"WestArea16", // "Trap 9B"
+		"WestArea17", // "Secret 3"
+		"WestArea18", // "Secret 8"
+		"WestArea19", // "Secret 6"
+		"WestArea1a", // "Trap 4"
+		"WestArea1b", // "Trap 5"
+		"WestArea1c", // "Trap 8"
+		"WestArea1d", // "Trap 7"
+		"WestArea1e", // "Secret 7"
+		"WestArea1f", // invalid
+		"WestArea20", // "Secret 9"
+		"WestArea21", // invalid
+		"WestArea22", // invalid
+		"WestArea23", // invalid
+		"WestArea24", // invalid
+		"WestArea25", // invalid
+		"WestArea26", // invalid
+		"WestArea27", // invalid
+		"WestArea28", // invalid
+		"WestArea29", // invalid
+		"WestArea2a", // invalid
+		"WestArea2b", // invalid
+		"KingsTomb", // "King's Tomb"
+		"RauruTown", // "Rauru Town"
+		"WestArea2e", // invalid
+		"RutoTown", // "Ruto Town"
+		"SariaTownSouth", // "Saria Town South"
+		"SariaTownNorth", // "Saria Town North"
+		"BagusHouse", // "Bagu's Home"
+		"MidoTown", // "Mido Town"
+		"Palace1", // "Parapa Palace"
+		"Palace2", // "Midoro Palace"
+		"Palace3", // "Island Palace"
+		"WestArea37", // invalid
+		"WestArea38", // invalid
+		"WestArea39", // invalid
+		"WestArea3a", // invalid
+		"WestArea3b", // invalid
+		"WestArea3c", // invalid
+		"WestArea3d", // invalid
+		"WestArea3e", // invalid
+		"WestArea3f", // invalid
+		"DmArea00", // "DM 1B"
+		"DmArea01", // "DM 1A"
+		"DmArea02", // "DM 6A"
+		"DmArea03", // "DM 6B"
+		"DmArea04", // "DM 7A"
+		"DmArea05", // "DM 7B"
+		"DmArea06", // "DM 2A"
+		"DmArea07", // "DM 2B"
+		"DmArea08", // "DM 3B"
+		"DmArea09", // "DM 3A"
+		"DmArea0a", // "DM 10A"
+		"DmArea0b", // "DM 10B"
+		"DmArea0c", // "DM 4A"
+		"DmArea0d", // "DM 4B"
+		"DmArea0e", // "DM 11A"
+		"DmArea0f", // "DM 11B"
+		"DmArea10", // "DM 12A"
+		"DmArea11", // "DM 12B"
+		"DmArea12", // "DM 5B"
+		"DmArea13", // "DM 5A"
+		"DmArea14", // "DM 13B"
+		"DmArea15", // "DM 13A"
+		"DmArea16", // "DM 14A"
+		"DmArea17", // "DM 14B"
+		"DmArea18", // "DM 15B"
+		"DmArea19", // "DM 15A"
+		"DmArea1a", // "DM 16A"
+		"DmArea1b", // "DM 16B"
+		"HammerCave", // "Spectacle Cave"
+		"DmArea1d", // "DM 9A"
+		"DmArea1e", // "DM 9B"
+		"DmArea1f", // "DM 9C"
+		"DmArea20", // "DM 9D"
+		"DmArea21", // "DM 8C"
+		"DmArea22", // "DM 8D"
+		"DmArea23", // "DM 8A"
+		"DmArea24", // "DM 8B"
+		"DmArea25", // "MI 3"
+		"DmArea26", // "MI 2"
+		"DmArea27", // "MI 4"
+		"DmArea28", // invalid
+		"DmArea29", // invalid
+		"DmArea2a", // invalid
+		"DmArea2b", // invalid
+		"DmArea2c", // invalid
+		"DmArea2d", // invalid
+		"DmArea2e", // invalid
+		"DmArea2f", // invalid
+		"DmArea30", // invalid
+		"DmArea31", // invalid
+		"DmArea32", // invalid
+		"DmArea33", // invalid
+		"Palace4", // "Maze Palace"
+		"DmArea35", // invalid
+		"DmArea36", // invalid
+		"ChildCave", // "MI 1"
+		"DmArea38", // "Spectacle Rock"
+		"DmArea39", // "MI 5"
+		"DmArea3a", // "MI 9"
+		"DmArea3b", // "MI 6"
+		"DmArea3c", // "MI 7"
+		"DmArea3d", // "MI 8"
+		"DmArea3e", // invalid
+		"DmArea3f", // invalid
+		"EastArea00", // "Secret 11"
+		"EastArea01", // "Secret 18"
+		"EastArea02", // "Trap 12"
+		"EastArea03", // "Trap 13"
+		"EastArea04", // "Trap 14"
+		"EastArea05", // "Trap 17"
+		"EastArea06", // "Trap 15"
+		"EastArea07", // "Trap 16"
+		"EastArea08", // "Trap 11"
+		"EastArea09", // "Trap 10"
+		"EastArea0a", // "Secret 16"
+		"EastArea0b", // "Northeastern Cave Entrance"
+		"EastArea0c", // "Northeastern Cave Exit"
+		"EastArea0d", // "Cave 5"
+		"EastArea0e", // "Cave 6"
+		"EastArea0f", // "Kasuto Cave Entrance"
+		"EastArea10", // "Kasuto Cave Exit"
+		"EastArea11", // "Cave 8 Entrance"
+		"EastArea12", // "Cave 8 Exit"
+		"EastArea13", // "Cave 7 Exit"
+		"EastArea14", // "Cave 7 Entrance"
+		"EastArea15", // "Secret 17"
+		"EastArea16", // "Secret 21"
+		"EastArea17", // "Secret 13"
+		"EastArea18", // "Secret 14"
+		"EastArea19", // "Secret 15"
+		"EastArea1a", // "Secret 19"
+		"EastArea1b", // "Secret 12"
+		"EastArea1c", // "Secret 21"
+		"EastArea1d", // "Secret 20"
+		"EastArea1e", // "Trap 20"
+		"EastArea1f", // "Trap 19"
+		"EastArea20", // "Trap 18"
+		"EastArea21", // invalid
+		"EastArea22", // invalid
+		"EastArea23", // invalid
+		"EastArea24", // invalid
+		"EastArea25", // invalid
+		"EastArea26", // invalid
+		"EastArea27", // invalid
+		"EastArea28", // invalid
+		"EastArea29", // invalid
+		"EastArea2a", // invalid
+		"EastArea2b", // invalid
+		"EastArea2c", // invalid
+		"NabooruTown", // "Nabooru Town"
+		"EastArea2e", // invalid
+		"DaruniaTown", // "Darunia Town"
+		"EastArea30", // invalid
+		"NewKasutoTown", // "Hidden Town of Kasuto"
+		"EastArea32", // invalid
+		"OldKasutoTown", // "Deserted Town of Kasuto"
+		"Palace5", // "Palace on the Sea"
+		"Palace6", // "Three-Eye Rock Palace"
+		"GreatPalace", // "Great Palace"
+		"EastArea37", // invalid
+		"EastArea38", // invalid
+		"EastArea39", // invalid
+		"EastArea3a", // invalid
+		"EastArea3b", // invalid
+		"EastArea3c", // invalid
+		"EastArea3d", // invalid
+		"EastArea3e", // invalid
+		"EastArea3f", // invalid
 		"FourthArea00",
 		"FourthArea01",
 		"FourthArea02",
