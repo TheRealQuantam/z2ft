@@ -1219,3 +1219,124 @@ BANKD_FREE_SPACE:
 
 .segment "BANK1F_CODA"
 	.incbin SRC_ROM, SRC_OFFS($1f, $1f00), $100
+
+
+; Lag reduction changes
+patch_segment PATCH_OW_LAG_REDUCTION_1, 3
+	jmp @+
+	
+@:
+
+patch_segment PATCH_OW_LAG_REDUCTION_2, 1
+.ifndef RANDOMIZER
+	rts
+.endif
+
+patch_segment PATCH_SS_LAG_REDUCTION_1, $35, $f27f
+.scope
+	; $a bytes
+	; Calculate delta = x + $18 - screen_x
+	ldy $3b, x
+	lda $4d, x
+	clc
+	adc #$18
+	bcc :+
+
+	iny
+
+@: ; $14 bytes
+	sec
+	sbc $72c
+	sta $e
+	tya
+	sbc $72a
+	
+	bcc NoOverlap ; < 0
+	
+	lsr a
+	bne NoOverlap ; >= $200
+	
+	lda $e
+
+	jmp SsLagReductionPart2
+	
+NoOverlap: ; 3 bytes
+	lda #$f
+	
+.endscope
+
+SsLagReductionPart3: ; 7 bytes
+	ldy $0
+	sta $00c8, y
+	
+.ifdef RANDOMIZER
+	jmp (SsLagReductionPart4Tgt)
+.else
+	jmp $f2b4
+.endif
+
+OverlapMaskLo:
+	.byte $e, $c, $8, 0
+	
+OverlapMaskHi:
+	.byte 1, 3, 7
+	
+patch_segment PATCH_SS_LAG_REDUCTION_2, $26, $feaa
+.proc SsLagReductionPart2 ; 2 bytes
+	bcs AtLeast100
+	
+Below100: ; 6 bytes
+	; OverlapMaskLo[min(delta, $18) / 8]
+	cmp #$18
+	bcc @+
+	
+	lda #$18
+	
+@: ; 9 bytes
+	lsr a
+	lsr a
+	lsr a
+	tay
+	lda OverlapMaskLo, y
+	
+	bpl Done
+	
+AtLeast100: ; $d bytes
+	cmp #$18
+	bcs NoOverlap2
+	
+	; OverlapMaskHi[(delta - 0x100) / 8]
+	lsr a
+	lsr a
+	lsr a
+	tay
+	lda OverlapMaskHi, y
+	
+	bpl Done
+	
+NoOverlap2:
+	lda #$f
+	
+Done:
+	jmp SsLagReductionPart3
+.endproc
+
+patch_segment PATCH_SS_LAG_REDUCTION_3, $c, $ffdc
+.ifdef RANDOMIZER
+
+SsLagReductionPart4Tgt:
+	.word SsLagReductionPart4 ; Overwrite to enable lag reduction
+	
+.proc SsLagReductionPart4
+	; Slow it down so it won't be faster than vanilla
+	ldy #$10
+@:
+	dey
+	bne @-
+	
+	ldy $0
+	
+	jmp $f2b4
+.endproc
+
+.endif
