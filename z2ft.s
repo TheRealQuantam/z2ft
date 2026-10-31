@@ -1055,12 +1055,11 @@ TrackFlags:
 	.byte TRACK_FLAG_FANFARE ; 4 (item fanfare)
 	.res 3, 0
 	.byte TRACK_FLAG_FANFARE ; 8 (skill fanfare)
-	.res 2, 0
-	.byte TRACK_FLAG_FANFARE ; b (boss)
+	.res 3, 0
 	.byte TRACK_FLAG_FANFARE ; c (crystal fanfare)
 	.res 4, 0
 	.byte TRACK_FLAG_FANFARE ; 11 (game complete fanfare)
-	.byte TRACK_FLAG_FANFARE ; 12 (Dark Link)
+	.byte 0                  ; 12 (Dark Link)
 	.res MAX_TRACKS - $13, 0
 
 .proc PatchCheckNoiseSfxCont
