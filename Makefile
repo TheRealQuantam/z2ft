@@ -1,4 +1,4 @@
-.PHONY: all clean dir run
+.PHONY: all clean dir run js65
 
 BUILD_BASE_ROM := $(BASE_ROM)
 
@@ -12,12 +12,15 @@ DBG_NAME := $(GAME_PRE)ft.dbg
 IPS_NAME := $(GAME_PRE)ft.ips
 BPS_NAME := $(GAME_PRE)ft.bps
 
+JS65 ?= js65
+JS65_BUILDDIR := build/js65
+JS65_ROM_NAME ?= $(JS65_BUILDDIR)/z2rndft.nes
+JS65_OPTS ?=
+
 # Assembler files, for building out the banks
 ROOT_ASM_FILES := $(wildcard $(SRCDIR)/*.s)
-BHOP_ASM_FILES := $(BHOPDIR)/bhop.s
-O_FILES := \
-  $(patsubst $(SRCDIR)/%.s,$(BUILDDIR)/%.o,$(ROOT_ASM_FILES))  \
-  $(patsubst $(BHOPDIR)/%.s,$(BUILDDIR)/%.o,$(BHOP_ASM_FILES))
+BHOP_FILES := $(wildcard $(BHOPDIR)/*.s $(BHOPDIR)/bhop/*)
+O_FILES := $(patsubst $(SRCDIR)/%.s,$(BUILDDIR)/%.o,$(ROOT_ASM_FILES))
 
 MAKE_FT_ROM := python ../makeftrom/makeftrom.py
 FTCFG_NAME := $(FTCFG_PRE)ft.ftcfg
@@ -31,6 +34,12 @@ DEMO_CFG_NAME := democfg.json5
 endif
 
 all: dir $(ROM_NAME) $(IPS_NAME) $(BPS_NAME) $(DEMO_ROM_NAME) $(DEMO_IPS_NAME) $(DEMO_BPS_NAME)
+
+js65: $(JS65_ROM_NAME)
+
+$(JS65_ROM_NAME): z2ft.s js65.inc $(BHOP_FILES) $(BUILD_BASE_ROM) Makefile
+	mkdir -p $(JS65_BUILDDIR)
+	$(JS65) -I . -I $(BHOPDIR)/bhop -D MMC=3 -D Z2FT_PATCH_ONLY -D Z2FT_JS65 $(JS65_OPTS) -r "$(BUILD_BASE_ROM)" -o "$@" z2ft.s
 
 dir:
 	-@mkdir -p $(BUILDDIR)
@@ -64,12 +73,9 @@ $(BPS_NAME): $(ROM_NAME)
 $(ROM_NAME): $(CFG_NAME) $(O_FILES)
 	ld65 -vm -m $(BUILDDIR)/map.txt -Ln $(BUILDDIR)/labels.txt --dbgfile $(DBG_NAME) -o $@ $(value LINK_OPTS) -C $^
 
-$(BUILDDIR)/%.o: $(SRCDIR)/%.s $(BUILD_BASE_ROM) ../z2mmc5/mmc5regs.inc
+$(BUILDDIR)/%.o: $(SRCDIR)/%.s $(BUILD_BASE_ROM) $(BHOP_FILES)
 	@echo .define SRC_ROM "$(BUILD_BASE_ROM)" > $(BUILDDIR)/build.inc
 	ca65 -g -I $(BUILDDIR) -I $(BHOPDIR)/bhop -l $@.lst -o $@ $(value COMPILE_OPTS) $<
-
-$(BUILDDIR)/%.o: $(BHOPDIR)/%.s
-	ca65 -g -l $@.lst -o $@ $(value BHOP_COMPILE_OPTS) $<
 
 $(DEMO_ROM_NAME): $(ROM_NAME) $(FTCFG_NAME) $(DEMO_CFG_NAME) 
 	$(MAKE_FT_ROM) --ftcfg $(FTCFG_NAME) $(DEMO_CFG_NAME) --input-rom $(ROM_NAME) --output-rom $(DEMO_ROM_NAME) --debug
