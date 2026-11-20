@@ -28,13 +28,6 @@ LagReductionResume := $f2b4
 .feature c_comments
 .feature org_per_seg
 
-.ifdef Z2FT_JS65
-.include "js65.inc"
-.else
-.segment "PATCH_CHECK_NOISE_SFX"
-.org $95db
-.endif
-
 .ifndef Z2FT_COMPENSATING_DELAY
 Z2FT_COMPENSATING_DELAY = 1
 .endif
@@ -117,6 +110,7 @@ STOP_MUSIC_CMD = $84 ; And above
 	.assert .ident(.sprintf("__%s_SIZE__", .string(name))) <= (size), lderror, .sprintf("Segment '%s' exceeds size limit of $%x bytes", .string(name), (size))
 
 	.ifnblank start_addr
+.org start_addr
 	.import .ident(.sprintf("__%s_LOAD__", .string(name)))
 	.assert .ident(.sprintf("__%s_LOAD__", .string(name))) = (start_addr), lderror, .sprintf("Segment '%s' was not loaded at the correct address %x", .string(name), (start_addr))
 	.endif
@@ -126,8 +120,8 @@ STOP_MUSIC_CMD = $84 ; And above
 	.endif
 .endmacro
 
-.macro patch_call seg_name, target
-	patch_segment seg_name, 3
+.macro patch_call seg_name, target, start_addr
+	patch_segment seg_name, 3, start_addr
 		jsr target
 .endmacro
 
@@ -192,13 +186,13 @@ NO_FT_TRACK_TO_PLAY = $ff
 
 
 .segment "ZEROPAGE": zeropage
-	.org $4c - NUM_BHOP_TEMPS
+.org $4c - NUM_BHOP_TEMPS
 BhopTemps: .res NUM_BHOP_TEMPS
 
-	.org $4c
+.org $4c
 Temp: .byte 0
 
-	.org $dc
+.org $dc
 ; Only valid during the title screen
 TitleMusicPhase: .byte 0
 TitleMusicPhaseFlag: .byte 0
@@ -206,7 +200,7 @@ TitlePhaseFramesLeft: .word 0
 
 
 .segment "VARS"
-	.org $76a
+.org $76a
 IsInit: .byte 0
 
 
@@ -274,8 +268,8 @@ inc_banks $e, $1f
 .endif
 
 
-patch_call PATCH_CALL_UPDATE_TITLE_MUSIC, UpdateTitleMusic
-patch_call PATCH_CALL_UPDATE_GAME_MUSIC, UpdateGameMusic
+patch_call PATCH_CALL_UPDATE_TITLE_MUSIC, UpdateTitleMusic, $800d
+patch_call PATCH_CALL_UPDATE_GAME_MUSIC, UpdateGameMusic, $901f
 
 .ifndef RANDOMIZER
 
@@ -390,6 +384,7 @@ patch_segment PATCH_CHECK_NOISE_SFX, $b, $95db, $95e5
 .ifndef Z2FT_PATCH_ONLY
 	inc_bank_part SOUND_BANK, 0, $78c
 .endif
+.org $878c
 	
 	; $674 bytes available
 	
@@ -1129,6 +1124,7 @@ BANKC_LOW_FREE_SPACE:
 
 
 .segment "ENEMY_TRACK_TABLES"
+.org $8c00
 EncounterTrackMap:
 	; West Hyrule
 	.byte OVERWORLD_TRACK_IDX ; 0: North Palace
@@ -1184,6 +1180,7 @@ ENEMY_TRACK_TABLES_FREE_SPACE:
 	; $258 bytes available
 	.res $58, $ff
 .endif
+.org $9e00
 	
 TrackMap:
 .repeat NUM_TRACKS, i
@@ -1208,6 +1205,7 @@ BANK_C_HIGH_FREE_SPACE:
 .ifndef Z2FT_PATCH_ONLY
 	inc_bank_part (SOUND_BANK + 1), 0, $c09
 .endif
+.org $ac09
 	
 	; $13f7 bytes available
 	
@@ -1239,7 +1237,10 @@ BANKD_FREE_SPACE:
 
 
 .segment "BANK1F"
-.proc UpdateFtMusic
+; dumb workaround for ca65. if you do .org you can't do .bank on that label
+UpdateFtMusic:
+.org $8000
+.scope
 	; FT track is playing
 	
 	save_bhop_temps
@@ -1326,7 +1327,7 @@ BANKD_FREE_SPACE:
 	sta PrgBankAReg
 	
 	rts
-.endproc ; UpdateFtMusic
+.endscope ; UpdateFtMusic
 .assert * <= $80b1, lderror, "UpdateFtMusic overlaps bhop"
 
 
@@ -1338,7 +1339,7 @@ BANKD_FREE_SPACE:
 
 
 ; Lag reduction changes
-patch_segment PATCH_OW_LAG_REDUCTION_1, 3
+patch_segment PATCH_OW_LAG_REDUCTION_1, 3, $e001
 	jmp :+
 
 :

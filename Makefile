@@ -39,7 +39,7 @@ js65: $(JS65_ROM_NAME)
 
 $(JS65_ROM_NAME): z2ft.s js65.inc $(BHOP_FILES) $(BUILD_BASE_ROM) Makefile
 	mkdir -p $(JS65_BUILDDIR)
-	$(JS65) -I . -I $(BHOPDIR)/bhop -D MMC=3 -D Z2FT_PATCH_ONLY -D Z2FT_JS65 $(JS65_OPTS) -r "$(BUILD_BASE_ROM)" -o "$@" z2ft.s
+	$(JS65) -I . -I $(BHOPDIR)/bhop -D MMC=3 -D Z2FT_PATCH_ONLY $(JS65_OPTS) -r "$(BUILD_BASE_ROM)" -o "$@" js65.inc z2ft.s
 
 dir:
 	-@mkdir -p $(BUILDDIR)
