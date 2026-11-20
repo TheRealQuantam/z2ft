@@ -1,17 +1,52 @@
+.ifdef Z2FT_PATCH_ONLY
+.ifndef RANDOMIZER
+RANDOMIZER = 1
+.endif
+.else
 .include "build.inc"
-.include "../z2mmc5/mmc5regs.inc"
-.include "bhop.inc"
+.endif
 
-.feature c_comments
-.feature org_per_seg
+PrgBank8Reg := $5114
+PrgBankAReg := $5115
+PRG_BANK_ROM = $80
+AreaEntranceIndex := $69ff
 
-.define FT_SAVE_BUFF_SIZE $140
-.import __BHOP_RAM_LOAD__, __BHOP_RAM_SIZE__
+.ifdef RANDOMIZER
+CurBank8 := $6340
+CurBankA := $6341
+.else
+CurBank8 := $7b2
+CurBankA := $7b3
+.endif
 
 BANK_SIZE = $2000
 NUM_PRG_BANKS = $20
 
 SOUND_BANK = $c
+LagReductionResume := $f2b4
+
+.feature c_comments
+.feature org_per_seg
+
+.ifndef Z2FT_COMPENSATING_DELAY
+Z2FT_COMPENSATING_DELAY = 1
+.endif
+
+.export UpdateSound, UpdateFtMusic, CallUpdateFtMusic
+.ifdef RANDOMIZER
+.export CompensatingDelayTarget
+.endif
+
+.include "bhop/bhop.s"
+.assert BHOP::bhop_ptr = $46, lderror, "bhop scratch address mismatch"
+.assert BHOP::scratch_byte + 1 - BHOP::bhop_ptr = 6, lderror, "bhop scratch size mismatch"
+.import __BHOP_RAM_LOAD__, __BHOP_RAM_SIZE__
+.assert __BHOP_RAM_LOAD__ = $6800, lderror, "bhop RAM address mismatch"
+.assert BHOP::global_attenuation + 1 <= $6940, lderror, "bhop exceeds save buffer"
+.assert BHOP::global_attenuation + 1 <= $69e0, lderror, "bhop overlaps high variables"
+.assert * <= $9800, lderror, "bhop overlaps DPCM"
+
+.define FT_SAVE_BUFF_SIZE $140
 
 NUM_TRACKS = $13
 MAX_TRACKS = $80
@@ -75,6 +110,7 @@ STOP_MUSIC_CMD = $84 ; And above
 	.assert .ident(.sprintf("__%s_SIZE__", .string(name))) <= (size), lderror, .sprintf("Segment '%s' exceeds size limit of $%x bytes", .string(name), (size))
 
 	.ifnblank start_addr
+.org start_addr
 	.import .ident(.sprintf("__%s_LOAD__", .string(name)))
 	.assert .ident(.sprintf("__%s_LOAD__", .string(name))) = (start_addr), lderror, .sprintf("Segment '%s' was not loaded at the correct address %x", .string(name), (start_addr))
 	.endif
@@ -84,8 +120,8 @@ STOP_MUSIC_CMD = $84 ; And above
 	.endif
 .endmacro
 
-.macro patch_call seg_name, target
-	patch_segment seg_name, 3
+.macro patch_call seg_name, target, start_addr
+	patch_segment seg_name, 3, start_addr
 		jsr target
 .endmacro
 
@@ -121,22 +157,6 @@ StopTitleTrack := $82cf
 UpdateGame := $c2ca
 SwitchToBank0 := $ffc5
 
-.ifndef RANDOMIZER
-
-CurBank8 := $7b2
-CurBankA := $7b3
-
-.else
-
-; The randomizer changed where it puts these after z2ft was written.
-CurBank8 := $6380
-CurBankA := $6381
-
-.endif
-
-; This is set by Z2R in the randomizer build and must be at a hard-coded address
-RealCurMapArea := $69ff
-
 WorldRegionDivYs := $cb32
 
 CurWorldMap := $706
@@ -166,13 +186,13 @@ NO_FT_TRACK_TO_PLAY = $ff
 
 
 .segment "ZEROPAGE": zeropage
-	.org $4c - NUM_BHOP_TEMPS
+.org $4c - NUM_BHOP_TEMPS
 BhopTemps: .res NUM_BHOP_TEMPS
 
-	.org $4c
+.org $4c
 Temp: .byte 0
 
-	.org $dc
+.org $dc
 ; Only valid during the title screen
 TitleMusicPhase: .byte 0
 TitleMusicPhaseFlag: .byte 0
@@ -180,7 +200,7 @@ TitlePhaseFramesLeft: .word 0
 
 
 .segment "VARS"
-	.org $76a
+.org $76a
 IsInit: .byte 0
 
 
@@ -234,6 +254,7 @@ END_FT_SAVE_BUFFER:
 .endmacro
 
 
+.ifndef Z2FT_PATCH_ONLY
 .segment "HDR"
 .incbin SRC_ROM, 0, $10
 
@@ -244,9 +265,11 @@ inc_banks $e, $1f
 	.segment .sprintf("CHRBANK%X", i)
 	.incbin SRC_ROM, (NUM_PRG_BANKS * BANK_SIZE + i * $800 + $10), $800
 .endrepeat
+.endif
 
-patch_call PATCH_CALL_UPDATE_TITLE_MUSIC, UpdateTitleMusic
-patch_call PATCH_CALL_UPDATE_GAME_MUSIC, UpdateGameMusic
+
+patch_call PATCH_CALL_UPDATE_TITLE_MUSIC, UpdateTitleMusic, $800d
+patch_call PATCH_CALL_UPDATE_GAME_MUSIC, UpdateGameMusic, $901f
 
 .ifndef RANDOMIZER
 
@@ -257,13 +280,13 @@ patch_call PATCH_CALL_SAVE_REAL_MAP_AREA2, SaveRealMapArea2
 patch_segment PATCH_SAVE_REAL_MAP_AREA, $10, $a970, $a97f
 .proc SaveRealMapArea
 	stx CurMapArea
-	stx RealCurMapArea
+	stx AreaEntranceIndex
 	rts
 .endproc ; SaveRealMapArea
 
 .proc SaveRealMapArea2
 	sta CurMapArea
-	sta RealCurMapArea
+	sta AreaEntranceIndex
 	rts
 .endproc ; SaveRealMapArea
 
@@ -337,11 +360,9 @@ patch_segment PATCH_RESTART_LAST_BOSS_TRACK, 9, $988e, $9896
 	sta $eb
 	
 :
-	
 ; The fire SFX is started every frame a fire is on screen and simply sets the noise registers without setting $7fd to indicate a SFX is playing. Make it set $7fd so music doesn't interfere.
 patch_segment PATCH_CHECK_NOISE_SFX, $b, $95db, $95e5
 	; $a bytes
-.org $95db
 .proc PatchCheckNoiseSfx
 	; *ed is in Y, *7fd >> 6 is in A, *ed:carry is >>= 7
 	; Can clobber all
@@ -360,7 +381,10 @@ patch_segment PATCH_CHECK_NOISE_SFX, $b, $95db, $95e5
 	.res 1
 
 .segment "BANKC_LOW"
+.ifndef Z2FT_PATCH_ONLY
 	inc_bank_part SOUND_BANK, 0, $78c
+.endif
+.org $878c
 	
 	; $674 bytes available
 	
@@ -400,7 +424,7 @@ UpdateSound:
 	sta PrevSfxChans
 	sta CurSfxChans
 	;sta CurFtBank
-	sta global_attenuation
+	sta BHOP::global_attenuation
 	
 	sta TitleMusicPhase
 	sta TitleMusicPhaseFlag
@@ -726,7 +750,7 @@ UpdateSound:
 	pla
 	tax
 	
-@:
+:
 	pla
 	
 	eor #$ff
@@ -798,7 +822,7 @@ UpdateSound:
 	bne @EncounterCommon
 	
 @BeginEncounter:
-	; If it's a fixed encounter use RealCurMapArea, else it's an enemy encounter
+	; If it's a fixed encounter use AreaEntranceIndex, else it's an enemy encounter
 	lda CurMapArea
 	cmp #$3e
 	bne @FixedEncounter
@@ -838,7 +862,7 @@ UpdateSound:
 	lsr a
 	ror a
 	ror a
-	ora RealCurMapArea
+	ora AreaEntranceIndex
 	tax
 	
 	lda EncounterTrackMap, x
@@ -939,7 +963,7 @@ UpdateSound:
 	
 	ldx #<page_size
 	
-@:
+:
 	dex
 	lda __BHOP_RAM_LOAD__ + page_offs, x
 	sta FtSaveBuff + page_offs, x
@@ -966,7 +990,7 @@ UpdateSound:
 	
 	ldx #<page_size
 	
-@:
+:
 	dex
 	lda __BHOP_RAM_LOAD__ + page_offs, x
 	ldy FtSaveBuff + page_offs, x
@@ -1094,9 +1118,13 @@ TrackFlags:
 .endproc ; PatchCheckNoiseSfxCont
 
 BANKC_LOW_FREE_SPACE:
+.assert UpdateSound = $878c, lderror, "UpdateSound address mismatch"
+.assert BANKC_LOW_FREE_SPACE <= $8c00, lderror, "Sound code overlaps area map"
+
 
 
 .segment "ENEMY_TRACK_TABLES"
+.org $8c00
 EncounterTrackMap:
 	; West Hyrule
 	.byte OVERWORLD_TRACK_IDX ; 0: North Palace
@@ -1138,13 +1166,21 @@ BossTrackMap:
 	.res $39, BOSS_TRACK_IDX
 	
 ENEMY_TRACK_TABLES_FREE_SPACE:
+.assert EncounterTrackMap = $8c00, lderror, "Area map address mismatch"
+.assert EnemyTrackMap = $8d00, lderror, "Enemy map address mismatch"
+.assert BossTrackMap = $8dc0, lderror, "Boss map address mismatch"
+.assert ENEMY_TRACK_TABLES_FREE_SPACE = $8e00, lderror, "Area table size mismatch"
+
 
 
 .segment "BANKC_HIGH"	
+.ifndef Z2FT_PATCH_ONLY
 	inc_bank_part SOUND_BANK, $1000, $da8
 	
 	; $258 bytes available
 	.res $58, $ff
+.endif
+.org $9e00
 	
 TrackMap:
 .repeat NUM_TRACKS, i
@@ -1159,10 +1195,17 @@ TrackAddrMap:
 .endrepeat
 
 BANK_C_HIGH_FREE_SPACE:
+.assert TrackMap = $9e00, lderror, "Song map address mismatch"
+.assert TrackAddrMap = $9f00, lderror, "Module table address mismatch"
+.assert BANK_C_HIGH_FREE_SPACE = $a000, lderror, "Module table size mismatch"
+
 
 
 .segment "BANKD"
+.ifndef Z2FT_PATCH_ONLY
 	inc_bank_part (SOUND_BANK + 1), 0, $c09
+.endif
+.org $ac09
 	
 	; $13f7 bytes available
 	
@@ -1188,10 +1231,16 @@ BANK_C_HIGH_FREE_SPACE:
 .endproc ; CallUpdateFtMusic
 
 BANKD_FREE_SPACE:
+.assert CallUpdateFtMusic = $ac09, lderror, "Trampoline address mismatch"
+.assert BANKD_FREE_SPACE <= $ac21, lderror, "Trampoline overlaps host free space"
+
 
 
 .segment "BANK1F"
-.proc UpdateFtMusic
+; dumb workaround for ca65. if you do .org you can't do .bank on that label
+UpdateFtMusic:
+.org $8000
+.scope
 	; FT track is playing
 	
 	save_bhop_temps
@@ -1213,7 +1262,7 @@ BANKD_FREE_SPACE:
 	
 	ldx FtAddrToPlay
 	ldy FtAddrToPlay + 1
-	jsr bhop_init
+	jsr BHOP::bhop_init
 	
 	lda #NO_FT_TRACK_TO_PLAY
 	sta FtTrackToPlay
@@ -1229,7 +1278,7 @@ BANKD_FREE_SPACE:
 	bpl @NoResumeFt
 	
 	; PrevSfxChans must be $8f
-	jsr bhop_mute_channels
+	jsr BHOP::bhop_mute_channels
 	
 @NoResumeFt:
 	lda CurSfxChans
@@ -1250,7 +1299,7 @@ BANKD_FREE_SPACE:
 
 	pla
 	
-	jsr bhop_unmute_channels
+	jsr BHOP::bhop_unmute_channels
 	
 @NoUnmutes:
 	lda PrevSfxChans
@@ -1258,7 +1307,7 @@ BANKD_FREE_SPACE:
 	and CurSfxChans
 	beq @DoneWithMutes
 	
-	jsr bhop_mute_channels
+	jsr BHOP::bhop_mute_channels
 	
 @DoneWithMutes:
 	lda CurSfxChans
@@ -1266,7 +1315,7 @@ BANKD_FREE_SPACE:
 	
 	bmi @IsPaused
 	
-	jsr bhop_play
+	jsr BHOP::bhop_play
 	
 @IsPaused:
 	restore_bhop_temps
@@ -1278,21 +1327,25 @@ BANKD_FREE_SPACE:
 	sta PrgBankAReg
 	
 	rts
-.endproc ; UpdateFtMusic
+.endscope ; UpdateFtMusic
+.assert * <= $80b1, lderror, "UpdateFtMusic overlaps bhop"
 
 
+
+.ifndef Z2FT_PATCH_ONLY
 .segment "BANK1F_CODA"
 	.incbin SRC_ROM, SRC_OFFS($1f, $1f00), $100
+.endif
 
 
 ; Lag reduction changes
-patch_segment PATCH_OW_LAG_REDUCTION_1, 3
-	jmp @+
-	
-@:
+patch_segment PATCH_OW_LAG_REDUCTION_1, 3, $e001
+	jmp :+
 
-patch_segment PATCH_OW_LAG_REDUCTION_2, 1
+:
+
 .ifndef RANDOMIZER
+patch_segment PATCH_OW_LAG_REDUCTION_2, 1
 	rts
 .endif
 
@@ -1308,7 +1361,7 @@ patch_segment PATCH_SS_LAG_REDUCTION_1, $35, $f27f
 
 	iny
 
-@: ; $14 bytes
+: ; $14 bytes
 	sec
 	sbc $72c
 	sta $e
@@ -1336,7 +1389,7 @@ SsLagReductionPart3: ; 7 bytes
 .ifdef RANDOMIZER
 	jmp (SsLagReductionPart4Tgt)
 .else
-	jmp $f2b4
+	jmp LagReductionResume
 .endif
 
 OverlapMaskLo:
@@ -1352,11 +1405,11 @@ patch_segment PATCH_SS_LAG_REDUCTION_2, $26, $feaa
 Below100: ; 6 bytes
 	; OverlapMaskLo[min(delta, $18) / 8]
 	cmp #$18
-	bcc @+
+	bcc :+
 	
 	lda #$18
 	
-@: ; 9 bytes
+: ; 9 bytes
 	lsr a
 	lsr a
 	lsr a
@@ -1389,18 +1442,23 @@ patch_segment PATCH_SS_LAG_REDUCTION_3, $c, $ffdc
 .ifdef RANDOMIZER
 
 SsLagReductionPart4Tgt:
-	.word SsLagReductionPart4 ; Overwrite to enable lag reduction
+CompensatingDelayTarget:
+	.if Z2FT_COMPENSATING_DELAY
+	.word SsLagReductionPart4
+	.else
+	.word LagReductionResume
+	.endif
 	
 .proc SsLagReductionPart4
 	; Slow it down so it won't be faster than vanilla
 	ldy #$10
-@:
+:
 	dey
-	bne @-
+	bne :-
 	
 	ldy $0
 	
-	jmp $f2b4
+	jmp LagReductionResume
 .endproc
 
 .endif
